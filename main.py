@@ -1,108 +1,80 @@
-#Задание 1
-a = 15 * 3
-b = 15 / 3
-c = 15 // 2
-d = 15 ** 2
+""" 1 and 2 """
+
+DICT_NUM = {
+
+    "zero": "ноль",
+    "one": "один",
+    "two": "два",
+    "three": "три",
+    "four": "четире",
+    "five": "пять",
+    "six": "шесть",
+    "seven": "семь",
+    "eight": "восемь",
+    "nine": "девять",
+}
 
 
-print(type(15 * 3))
-print(type(15 / 3))
-print(type(15 // 2))
-print(type(15 ** 2))
-print(type(a))
-print(type(b))
-print(type(c))
-print(type(d))
+def num_translate(num_word):
+    """ convert one to один...nine to девять """
+    return DICT_NUM.get(num_word)
 
 
-#Задание 2-3
-def get_sign(x):
-    if x[0] in '+-':
-        return x[0]
+def num_translate_adv(num_word):
+    """ convert one to один...nine to девять with firt char capitalize """
+    to_key = DICT_NUM.get(num_word.lower())
 
-arr = ['в', '5', 'часов', '17', 'минут', 'температура', 'воздуха', 'была', '+5', 'градусов']
+    if to_key:
+        return to_key.capitalize() if num_word[0].isupper() else to_key
 
-i = 0
-while i < len(arr):
-    sign = get_sign(arr[i])
-    if arr[i].isdigit() or (sign and arr[i][1:].isdigit()):
-        if sign:
-            arr[i] = sign + arr[i][1:].zfill(2)
+    return None 
+
+""" 3 and 4 """
+
+def thesaurus(*args):
+    """ conver name list to dictionary like {A: [Alex..] , B:[Bob..]} """
+    out_dict = {}
+
+    for name in args:
+
+        if out_dict.get(name[0]):
+            out_dict[name[0]].append(name)
         else:
-            arr[i] = arr[i].zfill(2)
+            out_dict[name[0]] = [name]
 
-        arr.insert(i, '"')
-        arr.insert(i + 2, '"')
-        i += 2
-
-    i += 1
-
-print(arr)
+    return out_dict
 
 
+def thesaurus_adv(*args):
+    """ conver name list to dictionary like second_name[0]:{name[0]: name + second_name} """
+    out_dict = {}
+    for elem in args:
+        name, second_name = elem.split()
+        if not out_dict.get(second_name[0]):
+            out_dict[second_name[0]] = { name[0] : [elem] }
+        elif not out_dict[second_name[0]].get(name[0]):
+            (out_dict[second_name[0]])[name[0]] = [elem]
+        else:
+            (out_dict[second_name[0]])[name[0]].append(elem)
 
-s = ['в', '5', 'часов', '17', 'минут', 'температура', 'воздуха', 'была', '+5', 'градусов']
-print(" ".join(map(lambda x: '"%s"' % __import__('re').sub('\d+', lambda x: f'{x[0]}'.zfill(2), x) if any(map(str.isdigit, x)) else x, s)))
-# задание 4
+    return out_dict
 
-my_list = ['инженер-конструктор Игорь', 'главный бухгалтер МАРИНА', 'токарь высшего разряда нИКОЛАй', 'директор аэлита']
-for position in my_list:
-    print('Привет', position.split()[-1].title(),'!')
+""" 5 """
 
-# Задание 5
-input_list = [57.8, 46.51, 97, 76.05, 13.11, 87.93, 27, 97.09, 0.16, 42,
-        96.64, 34.17, 97.45, 40.62, 84.94, 7, 52.23, 93.74, 89, 3.93]
-
-store_id = id(input_list)
-print(input_list)
-
-# Задание 5.1
-print(f"{'a':-^100}")
-
-end_word:str = ", " 
-
-for i, num in enumerate(input_list):
-
-    fix_price = str(f"{float(num):.2f}").split(".")
-
-    if i == len(input_list) - 1:
-        end_word = "\n"
-
-    print(f"{fix_price[0]} руб {fix_price[1]} коп", end=end_word)
-
-# Задание 5.2
-print(f"{'b':-^100}")
-
-print(f"id before sort {store_id}")
-input_list.sort()
-print(input_list)
-print(f"id after sort {id(input_list)}")
-
-if store_id == id(input_list):
-    print("In place")
-else:
-    print("Diff obj")
+from random import choice
 
 
-# Задание 5.3
-print(f"{'c':-^100}")
-
-copy_of_list = input_list.copy() 
-copy_of_list.sort(reverse=True) 
-
-print(copy_of_list)
-print(store_id)
-print(id(copy_of_list))
-
-if store_id == id(copy_of_list):
-    print("In place")
-else:
-    print("Diff obj")
+nouns = ["автомобиль", "лес", "огонь", "город", "дом"]
+adverbs = ["сегодня", "вчера", "завтра", "позавчера", "ночью"]
+adjectives = ["веселый", "яркий", "зеленый", "утопичный", "мягкий"]
 
 
+def gen(from_, used_, unique):
+    while True:
+        n_nouns = choice(from_)
 
-# Задание 5.4
-print(f"{'d':-^100}")
+        if not (unique and n_nouns in used_):
+            used_.append(n_nouns)
+            break
 
-
-print("пять самых дорогих товаров", input_list[-6:-1])
+    return (n_nouns, used_)
