@@ -1,80 +1,57 @@
-""" 1 and 2 """
+from datetime import datetime
 
-DICT_NUM = {
+import requests
+def currency_rates(currency_code="", url="http://www.cbr.ru/scripts/XML_daily.asp"):
+    
 
-    "zero": "ноль",
-    "one": "один",
-    "two": "два",
-    "three": "три",
-    "four": "четире",
-    "five": "пять",
-    "six": "шесть",
-    "seven": "семь",
-    "eight": "восемь",
-    "nine": "девять",
-}
+    if not (currency_code and url):
+        return None
 
 
-def num_translate(num_word):
-    """ convert one to один...nine to девять """
-    return DICT_NUM.get(num_word)
+
+    currency_code = currency_code.upper()
+
+   
+    respond = requests.get(url)
+
+    if respond.ok:
+
+        cur = respond.text.split(currency_code)
+
+        
+        if len(cur) == 1:
+            return None
+
+     
+        value = cur[1].split("</Value>")[0].split("<Value>")[1]
+
+       
+        value = float(value.replace(",", "."))
+
+        date = respond.headers["Date"]
+        date = datetime.strptime(date, "%a, %d %b %Y %H:%M:%S GMT").date()
+
+        return (value, date)
+
+    else:
+        return None
+
+print((currency_rates("USD")))
+print((currency_rates("EUR")))
 
 
-def num_translate_adv(num_word):
-    """ convert one to один...nine to девять with firt char capitalize """
-    to_key = DICT_NUM.get(num_word.lower())
+import sys
 
-    if to_key:
-        return to_key.capitalize() if num_word[0].isupper() else to_key
-
-    return None 
-
-""" 3 and 4 """
-
-def thesaurus(*args):
-    """ conver name list to dictionary like {A: [Alex..] , B:[Bob..]} """
-    out_dict = {}
-
-    for name in args:
-
-        if out_dict.get(name[0]):
-            out_dict[name[0]].append(name)
-        else:
-            out_dict[name[0]] = [name]
-
-    return out_dict
+import utils
 
 
-def thesaurus_adv(*args):
-    """ conver name list to dictionary like second_name[0]:{name[0]: name + second_name} """
-    out_dict = {}
-    for elem in args:
-        name, second_name = elem.split()
-        if not out_dict.get(second_name[0]):
-            out_dict[second_name[0]] = { name[0] : [elem] }
-        elif not out_dict[second_name[0]].get(name[0]):
-            (out_dict[second_name[0]])[name[0]] = [elem]
-        else:
-            (out_dict[second_name[0]])[name[0]].append(elem)
+if __name__ == "__main__":
 
-    return out_dict
+    args = sys.argv[1:]
 
-""" 5 """
-
-from random import choice
-
-
-nouns = ["автомобиль", "лес", "огонь", "город", "дом"]
-adverbs = ["сегодня", "вчера", "завтра", "позавчера", "ночью"]
-adjectives = ["веселый", "яркий", "зеленый", "утопичный", "мягкий"]
-
-
-def gen(from_, used_, unique):
-    while True:
-        n_nouns = choice(from_)
-
-        if not (unique and n_nouns in used_):
-            used_.append(n_nouns)
-            break
-
-    return (n_nouns, used_)
+    for code in args:
+        conv = utils.currency_rates(code)
+        if conv:
+            cur, date = conv
+            date = date.strftime("%d-%m-%Y")
+            print(f"{cur}, {date}")
