@@ -1,86 +1,122 @@
-  """ Задание 1 и 2 """
+  #  Задание 1
 
-def odd_num(to):
-    
-    for i in range(1, to + 1, 2):
-        yield i
+def parse_log(pth_file="./nginx_logs.txt"):
 
-def odd_num_no_yield(to):
-    
-    return (x for x in range(1, to + 1, 2))
+    if pth_file:
+        with open(pth_file, "r", encoding="utf-8") as file:
+            for line in file:
+                ip = line.split(" - - ")[0]
+                rsp_and_pth = line.split('"')[1]
+                rsp = rsp_and_pth.split()[0]
+                pth = rsp_and_pth.split()[1]
+                yield(ip, rsp, pth)
 
-if __name__ == "__main__":
-    a_gen = odd_num(15)
-    b_gen = odd_num_no_yield(15)
 
-    print("a_gen type", type(a_gen))
-    print("b_gen type", type(b_gen))
+#  Задание  2
 
-    for elem in a_gen:
-        print(elem)
+def find_spamer(pth_file="./nginx_logs.txt"):
 
-    print(f"empty {list(a_gen)}")
+    if not pth_file:
+        return None
 
-""" Задание 3 """
+    parsed = parse_log(pth_file)
 
-from sys import getsizeof
+    db = {}
 
-tutors = ['Иван', 'Анастасия', 'Петр', 'Сергей', 'Дмитрий', 'Борис', 'Елена' ]
-klasses = ['9А', '7В', '9Б', '9В', '8Б', '10А', '10Б', '9А']
+    for log in parsed:
 
-def my_zip_gen():
+        db[log[0]] = db.get(log[0], 0) + 1
 
-    len_klasses = len(klasses)
+    return max(db.items(), key=lambda x: x[1])
 
-    return ((tut, klasses[i]) if i < len_klasses else (tut, None)
-            for i, tut in enumerate(tutors))
-if __name__ == '__main__':
-
-    gen = my_zip_gen()
-    print(type(gen))
-    print(getsizeof(gen))
-    print(*gen)
-
-""" Задание 4 """
-
-import time
-import sys
-
-def my_filter(*argv):
-    return (argv[i] for i in range(1, len(argv)) if argv[i] > argv[i - 1])
 
 if __name__ == "__main__":
+    parsed = parse_log()
 
-    src = [300, 2, 12, 44, 1, 1, 4, 10, 7, 1, 78, 123, 55]
-    result = [12, 44, 4, 10, 78, 123]
-    
-    answ = my_filter(*src)
-   
-    print(sys.getsizeof(answ))
-    
+    print(type(parsed))
 
-""" Задание 5 """
+    for _ in range(5):
+        print(next(parsed))
 
-import time  
-import sys  
+    spamer = find_spamer()
+    if spamer:
+        print(f"ip spamer: {spamer[0]}, count: {spamer[1]}")
 
-def my_set(*argv):
-  
-    answ = set()
+  #  Задание  3 
 
-    for elem in argv:
-        if not elem in answ:
-            answ.add(elem)
+import os
+import json
+
+from itertools import zip_longest
+
+def groping(
+        output_pth="./out.txt",
+        user_pth="./users.csv",
+        hobby_pth="./hobby.csv"):
+
+    if not (os.path.isfile(user_pth) or
+            os.path.isfile(hobby_pth)):
+        return -1
+    user_lines = None
+    hobby_lines = None
+
+    with open(user_pth, "r", encoding="utf-8") as user_file:
+        user_lines = user_file.readlines()
+
+    with open(hobby_pth, "r", encoding="utf-8") as hobby_file:
+        hobby_lines = hobby_file.readlines()
+
+    if len(user_lines) < len(hobby_lines):
+        return 1
+
+    group = {}
+
+    for fio, hobby in zip_longest(user_lines, hobby_lines):
+        fio = fio.replace("\n", "")
+        group[fio] = hobby.replace("\n", "") if hobby else None
+
+    with open(output_pth, "w+", encoding="utf-8") as out_file:
+        json.dump(group, out_file)  
+
+    return 0
+
+
+if __name__ == "__main__":
+    exit(groping())
+
+  #  Задание  6 
+
+PRICE_FILE = "./bakery.csv"
+
+
+def file_reader(start=-1, end=-1):
+
+    with open(PRICE_FILE, "r", encoding="utf-8") as price_list:
+
+        if start > 0:
+            for _ in range(start - 1):
+                price_list.readline()
+        
+        if end > 0:
+            for _ in range(abs(end - start) + 1):
+                yield price_list.readline().replace("\n", "")
         else:
-            answ.remove(elem)
+            for line in price_list:
+                yield line.replace("\n", "")
 
-    return [x for x in argv if x in answ]  
 
 if __name__ == "__main__":
 
-    src = [2, 2, 2, 7, 23, 1, 44, 44, 3, 2, 10, 7, 4, 11]
-    result = [23, 1, 3, 10, 4, 11]
+    import sys
 
-    t = time.perf_counter()
-    r = my_set(*src)
-    print(r)
+    start_pos = -1
+    end_pos = -1
+
+    if len(sys.argv) >= 2 and sys.argv[1].isdigit():
+        start_pos = int(sys.argv[1])
+
+    if len(sys.argv) == 3 and sys.argv[2].isdigit():
+        end_pos = int(sys.argv[2])
+
+    for l in file_reader(start_pos, end_pos):
+        print(f"{float(l):.2f}")
