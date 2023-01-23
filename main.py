@@ -1,122 +1,102 @@
   #  Задание 1
 
-def parse_log(pth_file="./nginx_logs.txt"):
+import os
 
-    if pth_file:
-        with open(pth_file, "r", encoding="utf-8") as file:
-            for line in file:
-                ip = line.split(" - - ")[0]
-                rsp_and_pth = line.split('"')[1]
-                rsp = rsp_and_pth.split()[0]
-                pth = rsp_and_pth.split()[1]
-                yield(ip, rsp, pth)
+folder_struct = {
+    "my_project": [
+        {
+            "settings": [{"bar": [], "foo":[]}],
+            "mainapp": [],
+            "adminapp": [],
+            "authapp": []
+        }]
+}
 
 
-#  Задание  2
+def project_starter(pth, struct):
 
-def find_spamer(pth_file="./nginx_logs.txt"):
+    for fold_node, ch_node in struct.items():
 
-    if not pth_file:
-        return None
+        test_path = os.path.join(pth, fold_node)
 
-    parsed = parse_log(pth_file)
+        if not os.path.exists(test_path):
+            os.mkdir(test_path)
 
-    db = {}
-
-    for log in parsed:
-
-        db[log[0]] = db.get(log[0], 0) + 1
-
-    return max(db.items(), key=lambda x: x[1])
+        if len(ch_node) > 0:
+            for node in ch_node:
+                project_starter(test_path, node)
 
 
 if __name__ == "__main__":
-    parsed = parse_log()
 
-    print(type(parsed))
+    project_starter(os.getcwd(), struct=folder_struct)
 
-    for _ in range(5):
-        print(next(parsed))
+  #  Задание 3
 
-    spamer = find_spamer()
-    if spamer:
-        print(f"ip spamer: {spamer[0]}, count: {spamer[1]}")
 
-  #  Задание  3 
+if __name__ == "__main__":
+
+    import os
+    import sys
+    import shutil
+
+    glb_path = sys.argv[1]
+    files = [os.path.relpath(os.path.join(root, file), glb_path) for root, _, files in os.walk(
+        glb_path) for file in files if file.endswith(".html")]
+    for rel_path in files:
+        path, file = os.path.split(rel_path)
+        test_path = os.path.join(glb_path, "template", path)
+        if not os.path.exists(test_path):
+            os.makedirs(test_path)
+        shutil.copyfile(os.path.join(glb_path,rel_path), os.path.join(test_path, file))
+
+   #  Задание 4
 
 import os
-import json
+import sys
+import time
 
-from itertools import zip_longest
-
-def groping(
-        output_pth="./out.txt",
-        user_pth="./users.csv",
-        hobby_pth="./hobby.csv"):
-
-    if not (os.path.isfile(user_pth) or
-            os.path.isfile(hobby_pth)):
-        return -1
-    user_lines = None
-    hobby_lines = None
-
-    with open(user_pth, "r", encoding="utf-8") as user_file:
-        user_lines = user_file.readlines()
-
-    with open(hobby_pth, "r", encoding="utf-8") as hobby_file:
-        hobby_lines = hobby_file.readlines()
-
-    if len(user_lines) < len(hobby_lines):
-        return 1
-
-    group = {}
-
-    for fio, hobby in zip_longest(user_lines, hobby_lines):
-        fio = fio.replace("\n", "")
-        group[fio] = hobby.replace("\n", "") if hobby else None
-
-    with open(output_pth, "w+", encoding="utf-8") as out_file:
-        json.dump(group, out_file)  
-
-    return 0
+size = {}
 
 
-if __name__ == "__main__":
-    exit(groping())
+def scan_mem(pth):
 
-  #  Задание  6 
+    for root, _, files in os.walk(pth):
+        for file in files:
+            correct_file = os.path.join(root, file)
+            mem = 10 ** len(str(os.stat(correct_file).st_size))
+            size[mem] = size.get(mem, 0) + 1
 
-PRICE_FILE = "./bakery.csv"
 
+def scan_mem_recursion(pth):
 
-def file_reader(start=-1, end=-1):
+    if not os.path.exists(pth):
+        return
+    with os.scandir(pth) as files:
 
-    with open(PRICE_FILE, "r", encoding="utf-8") as price_list:
+        for node in files:
 
-        if start > 0:
-            for _ in range(start - 1):
-                price_list.readline()
-        
-        if end > 0:
-            for _ in range(abs(end - start) + 1):
-                yield price_list.readline().replace("\n", "")
-        else:
-            for line in price_list:
-                yield line.replace("\n", "")
+            if os.path.isfile(node):
+
+                mem = 10 ** (len(str(os.stat(node).st_size)) - 1)
+                size[mem] = size.get(mem, 0) + 1
+            elif os.path.isdir(node):
+                scan_mem(os.path.join(pth, node))
 
 
 if __name__ == "__main__":
 
-    import sys
+    if len(sys.argv) == 2:
+        pth = sys.argv[1]
+    else:
+        pth = os.getcwd()
+    print(f"{'soution with os.walk':^39}")
+    time_now = time.perf_counter()
+    scan_mem(pth)
+    print(size, f"\n as { time.perf_counter() - time_now}")
 
-    start_pos = -1
-    end_pos = -1
-
-    if len(sys.argv) >= 2 and sys.argv[1].isdigit():
-        start_pos = int(sys.argv[1])
-
-    if len(sys.argv) == 3 and sys.argv[2].isdigit():
-        end_pos = int(sys.argv[2])
-
-    for l in file_reader(start_pos, end_pos):
-        print(f"{float(l):.2f}")
+    size = {}
+    print(f"{'soution with resursion':^39}")
+    time_now = time.perf_counter()
+    scan_mem_recursion(pth)
+    print(size, f"\n as { time.perf_counter() - time_now}")
