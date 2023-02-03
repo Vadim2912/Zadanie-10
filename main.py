@@ -1,236 +1,227 @@
   #  Задание 1
 
-import time
-import enum
+class Matrix:
+    """ Matrix """
+    __data: dict
+
+    def __init__(self, *elems, rows=1) -> None:
+
+        
+        self.__data = {}
+
+        if len(elems) % rows != 0:
+            raise ValueError("Can't split len(elems) / rows")
+
+        columns = len(elems) // rows
+
+        if len(elems) > 0:
+            self.__data["size"] = (rows, columns)
+
+        for column in range(rows):
+            for row in range(columns):
+                self.__data[(row, column)] = elems[column + row * rows]
+
+    def get_size(self) -> tuple:
+        
+        return self.__data.get("size", (0, 0))
+
+    def get_elem(self, row_index, column_index):
+        
+
+        value = self.__data[(row_index, column_index)]
+
+        if value is not None:
+            return value
+
+        raise ValueError(f"Unknow index {(row_index, column_index)}")
+
+    def __arifm_func(self, func, other: 'Matrix') -> list:
+
+        (rows, columns) = self.get_size()
+
+        return [func(self.get_elem(x, y),  other.get_elem(x, y))
+                for y in range(rows) for x in range(columns)]
+
+    def __add__(self, other: 'Matrix') -> 'Matrix':
+       
+        if self.get_size() != other.get_size():
+            raise ValueError("Matrix's sizies must be eq")
+
+        return Matrix(self.__arifm_func(lambda x, y: x + y, other), rows=self.get_size()[0])
+
+    def __sub__(self, other: 'Matrix') -> 'Matrix':
+        
+
+        if self.get_size() != other.get_size():
+            raise ValueError("Matrix's sizies must be eq")
+
+        return Matrix(self.__arifm_func(lambda x, y: x - y, other), rows=self.get_size()[0])
+
+    def __str__(self) -> str:
+
+        (rows, columns) = self.get_size()
+
+        if rows * columns == 0:
+            return "Empty Matrix"
+
+        output = ""
+        for j, row in enumerate(range(rows)):
+
+            for i, column in enumerate(range(columns)):
+                output += f"{self.get_elem(column, row)}"
+
+                if i != columns - 1:
+                    output += " "
+
+            if j != rows - 1:
+                output += "\n"
+
+      
+        return output
+
+    #  Задание 2
+
+from abc import ABC, abstractmethod
 
 
-class Colour(enum.Enum):
-    RED = 0
-    YELLOW = 1
-    GREEN = 2
+class MaterialLenSolver:
+    __length: float = 0
+    __coat_list = []
+    __costume_list = []
+
+    @property
+    def length(self):
+        return self.__length
+
+    @property
+    def node_list(self):
+        return {"coats": self.__coat_list, "costumies": self.__costume_list}
+
+    @node_list.setter
+    def node_list(self, other, add=True):
+        if other.__class__ is Coat:
+            if add:
+                self.__coat_list.append(other.get_name())
+            else:
+                self.__coat_list.remove(other.get_name())
+        elif other.__class__ is Costume:
+            if add:
+                self.__costume_list.append(other.get_name())
+            else:
+                self.__costume_list.remove(other.get_name())
+        else:
+            raise ValueError("Unknow cloth  type")
+
+    @length.setter
+    def length(self, in_len: float):
+        self.__length += in_len
+
+    def __iadd__(self, other):
+        self.length = other.material_length()
+        self.node_list = other
+        return self
+
+    def __isub__(self, other):
+        self.length = - other.material_length()
+        if other.__class__ is Coat and other.get_name() in self.__costume_list:
+            self.__costume_list.remove(other.get_name())
+        elif other.__class__ is Costume and other.get_name() in self.__coat_list:
+            self.__coat_list.remove(other.get_name())
+        return self
 
 
-class TrafficLight:
-    __colour: Colour
-    __move: int = 1
-
-    def __init__(self, colour: Colour) -> None:
-        self.__colour = colour
-
-    def running(self, green_t=7, red_t=7, yellow_t=2):
-
-        for _ in range(10):  
-            if self.__colour == Colour.RED:
-                print(self.__colour.name)
-                time.sleep(red_t)
-            elif self.__colour == Colour.YELLOW:
-                print(self.__colour.name)
-                time.sleep(yellow_t)
-            elif self.__colour == Colour.GREEN:
-                print(self.__colour.name)
-                time.sleep(green_t)
-
-            if self.__colour.value == 2:
-                self.__move = -1
-            elif self.__colour.value == 0:
-                self.__move = 1
-
-            self.__colour = Colour(self.__colour.value + self.__move)
-
-
-if __name__ == "__main__":
-    traffic = TrafficLight(Colour.GREEN)
-    traffic.running()
-
-#  Задание 2
-
-class Road:
-
-    _length: float
-    _width: float
-
-    def __init__(self, length: float = 0, width: float = 0) -> None:
-        self._length = length
-        self._width = width
-
-    def calc(self, density: float, thickness: float) -> float:
-        return self._length * self._width * density * thickness
-
-
-if __name__ == "__main__":
-    road = Road(length=20, width=5000)
-    print(road.calc(25, 5))
-
-    # or if we in module
-    road = Road()
-    road._length = 20
-    road._width = 5000
-    print(road.calc(density=25, thickness=5))
-
-#  Задание 3
-class Worker:
+class ACloth(ABC):
     name: str
-    surname: str
-    position: str
-    _income: dict = {"wage": 0.0, "bonus": 1.0}
 
-    def __init__(self, name: str, surname: str, position: str, income: dict = {"wage": 0, "bonus": 1.0}) -> None:
+    def get_name(self):
+        return self.name
+
+    @abstractmethod
+    def material_length(self):
+        """ return length of material """
+
+
+class Coat(ACloth):
+
+    def __init__(self, name, size) -> None:
+        super().__init__()
         self.name = name
-        self.surname = surname
-        self.position = position
-        self._income = income
+        self.size = size
+
+    def material_length(self):
+        return self.size * 6.5 + 0.5
 
 
-#  Задание 4
+class Costume(ACloth):
 
-from enum import Enum
+    def __init__(self, name, height) -> None:
+        super().__init__()
+        self.name = name
+        self.height = height
 
-
-class TURN(Enum):
-    LEFT = 0
-    RIGHT = 1
-
-
-class Car:
-    speed: float
-    _colour: str  
-    _name: str
-    _is_police: bool = False
-
-    def __init__(self, colour, name) -> None:
-        self._colour = colour
-        self._name = name
-
-    def go(self) -> None:
-        print(f"{self._name} is start")
-
-    def stop(self) -> None:
-        print(f"{self._name} is stop")
-
-    def turn(self, turn_side: TURN) -> None:
-        print(f"{self._name} is turn to {turn_side.name}")
-
-    def show_speed(self) -> float:
-        return self.speed
-
-
-class TownCar(Car):
-
-    def __init__(self, colour, name) -> None:
-        super().__init__(colour, name)
-
-    def show_speed(self) -> float:
-
-        spd = super().show_speed()
-
-        if spd > 40:
-            print("Overspeed (40)")
-
-        return spd
-
-
-class SportCar(Car):
-
-    def __init__(self, colour, name) -> None:
-        super().__init__(colour, name)
-
-
-class WorkCar(Car):
-
-    def __init__(self, colour, name) -> None:
-        super().__init__(colour, name)
-
-    def show_speed(self) -> float:
-        spd = super().show_speed()
-
-        if spd > 60:
-            print("Overspeed (60)")
-
-        return spd
-
-
-class PoliceCar(Car):
-
-    def __init__(self, colour, name) -> None:
-        super().__init__(colour, name)
-        self._is_police = True
+    def material_length(self):
+        return 2 * self.height + 0.3
 
 
 if __name__ == "__main__":
-    abstract_car = Car("Transparent", "SomeCar")
-    town_car = TownCar("Black", "TownCar")
-    work_car = WorkCar("Green", "WorkCar")
-    police_car = PoliceCar("DarkBlue", "PoliceCar")
 
-    abstract_car.speed = -100 # =)
-    town_car.speed = 120
-    work_car.speed = 160
-    police_car.speed = 175
+    mtr_solver = MaterialLenSolver()
 
-    for some in [abstract_car, town_car, work_car, police_car]:
-        print(f"{some.__class__}._name = {some._name}")
-        print(f"{some.__class__}._colour = {some._colour}")
-        print(f"{some.__class__}._is_police = {some._is_police}")
+    mtr_solver += Coat("For user 001", 10)
+    mtr_solver += Costume("For film 01", 121)
+    mtr_solver += Costume("For film 02", 119)
+    mtr_solver += Costume("For film 03", 97)
+    mtr_solver += Costume("For film 03", 130)
+    mtr_solver += Costume("For film 04", 180)
+    mtr_solver += Costume("For film 05", 103)
+    mtr_solver += Coat("For user 111", 15)
+    mtr_solver += Coat("For user 101", 19)
+    mtr_solver += Coat("For user 011", 12)
 
-        print(f"{some.__class__}.go() => ", end="")
-        some.go()
+    print(f"{mtr_solver.length} meters for {mtr_solver.node_list}")
 
-        print(f"{some.__class__}.stop() => ", end="")
-        some.stop()
+  #  Задание 3
 
-        print(f"{some.__class__}.turn(TURN.RIGHT) => ", end="")
-        some.turn(TURN.RIGHT)
+class Cell:
+    __cells: int
 
-        print(f"{some.__class__}.turn(TURN.LEFT) => ", end="")
-        some.turn(TURN.LEFT)
+    def __init__(self, cells: int) -> None:
+        self.__cells = cells
 
-        print(f"{some.__class__}.show_speed() => {some.show_speed()}", end="\n\n")
+    def __add__(self, other: 'Cell'):
+        return Cell(self._get_size() + other._get_size())
 
-  #  Задание 5
-class Stationery:
-    title: str
+    def __sub__(self, other: 'Cell'):
+        if self._get_size() < other._get_size():
+            raise ValueError("cells can't be < 0")
 
-    def draw(self) -> None:
-        print("Запуск отрисовки")
+        return Cell(self._get_size() - other._get_size())
 
+    def __mul__(self, other: 'Cell'):
+        return Cell(self._get_size() * other._get_size())
 
-class Pen(Stationery):
-    def __init__(self) -> None:
-        super().__init__()
-        self.title = "ручка"
+    def __floordiv__(self, other: 'Cell'):
+        return Cell(self._get_size() // other._get_size())
 
-    def draw(self) -> None:
-        print("Пишем текст")
-        return None
+    def _get_cells(self) -> str:
+        return str(self).replace("Cell(", "").replace(")", "")
 
+    def _get_size(self) -> int:
+        return self._get_cells().count("*")
 
-class Pencil(Stationery):
-    def __init__(self) -> None:
-        super().__init__()
-        self.title = "карандаш"
+    def __str__(self) -> str:
+        return f"Cell({'*'*self.__cells})"
 
-    def draw(self) -> None:
-        print("Чертим чертеж")
-        return None
+    def make_order(self, split_cell) -> str:
+        """ ordering cells to cube the size eq split_cell*split_cell """
 
+        if split_cell == 0:
+            raise ValueError("can't split cells by 0")
 
-class Handle(Stationery):
-    def __init__(self) -> None:
-        super().__init__()
-        self.title = "маркер"
+        if split_cell >= self._get_size():
+            return self._get_cells()
 
-    def draw(self) -> None:
-        print("Выделяем заголовки")
-        return None
+        size = self._get_size()
 
-
-if __name__ == "__main__":
-    pen = Pen()
-    pencil = Pencil()
-    handle = Handle()
-
-    for some in [pen, pencil, handle]:
-        print(f"{some.__class__}:title = {some.title}")
-        print(f"{some.__class__}.draw() =>\t", end="")
-        some.draw()
-        print()
+        return "".join([f"{x}\n" if i % split_cell == 0 and i != size  else x
+                        for i, x in enumerate(self._get_cells(), start=1)])
